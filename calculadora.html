@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <!-- Encabezado y estilos -->
+</head>
+<body>
+    <!-- Barra de navegación y otras secciones -->
+
+    <!-- Sección de la calculadora de subredes -->
+    <section id="calculadora" class="section">
+        <div class="container">
+            <h2>Calculadora de Subredes</h2>
+            <div id="calculator-container">
+                <label for="ip-address">Dirección IP:</label>
+                <input type="text" id="ip-address">
+                <label for="subnet-mask">Máscara de Subred (CIDR):</label>
+                <input type="text" id="subnet-mask">
+                <button id="calculate-button">Calcular</button>
+                <p id="result"></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pie de página y scripts -->
+    <script>
+        const calculateButton = document.getElementById('calculate-button');
+        const ipAddressInput = document.getElementById('ip-address');
+        const subnetMaskInput = document.getElementById('subnet-mask');
+        const resultElement = document.getElementById('result');
+
+        calculateButton.addEventListener('click', () => {
+            const ipAddress = ipAddressInput.value;
+            const subnetMask = subnetMaskInput.value;
+
+            // Convierte la dirección IP en un arreglo de números
+            const ipArray = ipAddress.split('.').map(Number);
+
+            // Convierte la máscara de subred en un número
+            const subnetBits = parseInt(subnetMask.split('/')[1], 10);
+            const subnetMaskDecimal = (0xFFFFFFFF << (32 - subnetBits)) >>> 0;
+            const subnetMaskArray = [
+                (subnetMaskDecimal >>> 24) & 0xFF,
+                (subnetMaskDecimal >>> 16) & 0xFF,
+                (subnetMaskDecimal >>> 8) & 0xFF,
+                subnetMaskDecimal & 0xFF
+            ];
+
+            // Calcula la dirección de red
+            const networkAddress = ipArray.map((octet, index) => octet & subnetMaskArray[index]);
+
+            // Calcula la dirección de broadcast
+            const invertedSubnetMaskArray = subnetMaskArray.map(octet => 255 - octet);
+            const broadcastAddress = ipArray.map((octet, index) => octet | invertedSubnetMaskArray[index]);
+
+            // Calcula la primera IP utilizable
+            const firstUsableAddress = networkAddress.slice();
+            firstUsableAddress[3] += 1;
+
+            // Calcula la última IP utilizable
+            const lastUsableAddress = broadcastAddress.slice();
+            lastUsableAddress[3] -= 1;
+
+            // Formatea los resultados
+            const calculatedResult = `
+                Dirección de red: ${networkAddress.join('.')}<br>
+                Dirección de broadcast: ${broadcastAddress.join('.')}<br>
+                Primera IP utilizable: ${firstUsableAddress.join('.')}<br>
+                Última IP utilizable: ${lastUsableAddress.join('.')}<br>
+                Máscara de subred: ${subnetMaskArray.join('.')}
+            `;
+
+            resultElement.innerHTML = calculatedResult;
+        });
+    </script>
+</body>
+</html>
